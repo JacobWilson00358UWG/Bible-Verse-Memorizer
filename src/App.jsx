@@ -1,122 +1,140 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [translations, setTranslations] = useState([])
+  const [books, setBooks] = useState([])
+  const [chapters, setChapters] = useState([])
+  const [verses, setVerses] = useState([])
+  const [currTranslation, setCurrTranslation] = useState('')
+  const [currBook, setCurrBook] = useState('')
+  const [currChapter, setCurrChapter] = useState(0)
+  const [currVerse, setCurrVerse] = useState(0)
+  const [verseResult, setVerseResult] = useState('l')
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+  useEffect(() => {
+    fetch('https://bible-api.com/data')
+      .then(response => response.json())
+      .then(data => {
+        setTranslations(data.translations || [])
+      })
+      .catch(error => console.error('Failed to load translations:', error))
+  }, [])
 
-      <div className="ticks"></div>
+  function handleTranslationChange(e) {
+    const value = e.target.value
+    setCurrTranslation(value)
+    setCurrBook('')
+    setCurrChapter(0)
+    setCurrVerse(0)
+    setChapters([])
+    setVerses([])
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+    fetch(`https://bible-api.com/data/${value}`)
+      .then(response => response.json())
+      .then(data => {
+        setBooks(data.books || [])
+      })
+      .catch(error => console.error('Failed to load books:', error))
+  }
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  function handleBookChange(e) {
+    const value = e.target.value
+    setCurrBook(value)
+    setCurrChapter(0)
+    setCurrVerse(0)
+    setVerses([])
+
+    fetch(`https://bible-api.com/data/${currTranslation}/${value}`)
+      .then(response => response.json())
+      .then(data => {
+        setChapters(data.chapters || [])
+      })
+      .catch(error => console.error('Failed to load chapters:', error))
+  }
+
+  function handleChapterChange(e) {
+    const value = e.target.value
+    setCurrChapter(value)
+    setCurrVerse(0)
+
+    fetch(`https://bible-api.com/data/${currTranslation}/${currBook}/${value}`)
+      .then(response => response.json())
+      .then(data => {
+        setVerses(data.verses || [])
+      })
+      .catch(error => console.error('Failed to load verses:', error))
+  }
+
+  function handleVerseChange(e) {
+    setCurrVerse(Number(e.target.value))
+  }
+
+  function handleSubmit(e) {
+    e.preventDefault()
+    if (!currTranslation || !currBook || !currChapter || !currVerse) {
+      console.error('Please select a translation, book, chapter, and verse before submitting.')
+      return
+    }
+
+    fetch(`https://bible-api.com/data/${currTranslation}/${currBook}/${currChapter}`)
+      .then(response => response.json())
+      .then(data => {
+        console.log('Verses:', data.verses)
+        console.log('Verse:', data.verses[currVerse])
+
+        setVerseResult(data.verses[currVerse - 1].text || 'No verse found.')
+      })
+      .catch(error => console.error('Failed to load verse:', error))
+  }
+
+  return <>
+    <form id="verse-controls" onSubmit={handleSubmit}>
+      <label htmlFor="translation">Translation</label>
+      <select id="translation" value={currTranslation} onChange={handleTranslationChange}>
+        <option value="">Select translation</option>
+        {translations.map(item => (
+          <option value={item.identifier} key={item.identifier}>
+              {item.name}
+            </option>
+          ))}
+      </select>
+
+      <label htmlFor="book">Book</label>
+      <select id="book" value={currBook} onChange={handleBookChange} disabled={!books.length}>
+        <option value="">Select book</option>
+        {books.map(item => (
+          <option value={item.id} key={item.id}>
+            {item.name}
+          </option>
+        ))}
+      </select>
+    
+      <label htmlFor="chapter">Chapter</label>
+      <select id="chapter" value={currChapter} onChange={handleChapterChange} disabled={!chapters.length}>
+        <option value="">Select chapter</option>
+        {chapters.map(item => (
+          <option value={Number(item.chapter)} key={item.chapter}>
+            {item.chapter}
+          </option>
+        ))}
+      </select>
+
+      <label htmlFor="verse">Verse</label>
+      <select id="verse" value={currVerse} onChange={handleVerseChange} disabled={!verses.length}>
+        <option value="">Select verse</option>
+        {verses.map(item => (
+          <option value={Number(item.verse)} key={item.verse}>
+            {item.verse}
+          </option>
+        ))}
+      </select>
+
+      <button type="submit" disabled={!currTranslation || !currBook || !currChapter || !currVerse} onClick={handleSubmit}>Submit</button>
+    </form>
+    <p>{verseResult}</p>
+  </>
 }
 
 export default App
+
