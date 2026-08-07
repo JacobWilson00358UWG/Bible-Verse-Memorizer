@@ -1,0 +1,22 @@
+.correct {
+    background-color: lightgreen;
+    border-color: green;
+}
+
+.incorrect {
+    background-color: lightcoral;
+    border-color: red;
+}
+
+.unanswered {
+    background-color: lightgray;
+    border-color: #888;
+}
+
+input {
+    display: inline-block;
+    width: 125px;
+
+    border-radius: 5px;
+    border: 1px solid #888;
+}

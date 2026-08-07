@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
+import VerseBlank from './VerseBlank'
 
 function App() {
   const [translations, setTranslations] = useState([])
@@ -10,8 +11,13 @@ function App() {
   const [currBook, setCurrBook] = useState('')
   const [currChapter, setCurrChapter] = useState(0)
   const [currVerse, setCurrVerse] = useState(0)
-  const [verseResult, setVerseResult] = useState('l')
-
+  
+  const [numWordsMissing, setNumWordsMissing] = useState(0)
+  const [verseRaw, setVerseRaw] = useState('')
+  const [verseFormatted, setVerseFormatted] = useState([])
+  const blankRefs = useRef([])
+  
+  
   useEffect(() => {
     fetch('https://bible-api.com/data')
       .then(response => response.json())
@@ -21,6 +27,10 @@ function App() {
       .catch(error => console.error('Failed to load translations:', error))
   }, [])
 
+  /**
+   * Handles the change of translation selection.
+   * Resets the current book, chapter, and verse, and fetches the books for the selected translation.
+   */
   function handleTranslationChange(e) {
     const value = e.target.value
     setCurrTranslation(value)
@@ -38,6 +48,10 @@ function App() {
       .catch(error => console.error('Failed to load books:', error))
   }
 
+  /**
+   * Handles the change of book selection.
+   * Resets the current chapter and verse, and fetches the chapters for the selected book. 
+   */
   function handleBookChange(e) {
     const value = e.target.value
     setCurrBook(value)
@@ -53,6 +67,10 @@ function App() {
       .catch(error => console.error('Failed to load chapters:', error))
   }
 
+  /**
+   * Handles the change of chapter selection.
+   * Resets the current verse and fetches the verses for the selected chapter.
+   */
   function handleChapterChange(e) {
     const value = e.target.value
     setCurrChapter(value)
@@ -66,11 +84,17 @@ function App() {
       .catch(error => console.error('Failed to load verses:', error))
   }
 
+  /**
+   * Handles the change of the verse selection.
+   */
   function handleVerseChange(e) {
     setCurrVerse(Number(e.target.value))
   }
 
-  function handleSubmit(e) {
+  /**
+   * Fetches the selected verse and generates a version of the verse with a specified number of words replaced by blanks.
+   */
+  function handleVerseSelected(e) {
     e.preventDefault()
     if (!currTranslation || !currBook || !currChapter || !currVerse) {
       console.error('Please select a translation, book, chapter, and verse before submitting.')
@@ -80,16 +104,71 @@ function App() {
     fetch(`https://bible-api.com/data/${currTranslation}/${currBook}/${currChapter}`)
       .then(response => response.json())
       .then(data => {
-        console.log('Verses:', data.verses)
-        console.log('Verse:', data.verses[currVerse])
-
-        setVerseResult(data.verses[currVerse - 1].text || 'No verse found.')
+        let verseText = data.verses[currVerse - 1]?.text || 'No verse found.'
+        setVerseRaw(verseText)//"currVerse - 1" because the list is 0-indexed but verse selection is 1-indexed
+        setVerseFormatted(formatAsBlankedVerse(verseText))
       })
       .catch(error => console.error('Failed to load verse:', error))
   }
 
+  /**
+   * Returns a list of objects representing the verse, with a specified number of words replaced by blanks.
+   * Each object describes whether the word is blanked and the word itself.
+   * 
+   * @param {string} verse - The verse to format and blank.
+   * @returns {Array} - A list of objects representing the formatted and blanked verse.
+   */
+  function formatAsBlankedVerse(verse) {
+    let result = []
+    
+    let verseWordsBuffer = verse.split(' ')
+    //Using "setNumWordsMissing" updates too late so we use a local value instead
+    let numWordsMissingActual = Math.min(numWordsMissing, verseWordsBuffer.length)
+    setNumWordsMissing(numWordsMissingActual)
+
+    verseWordsBuffer.forEach(word => {
+      result.push({
+        isBlanked: false,
+        verse: word
+      })
+    });
+    
+    for (let i = 0; i < numWordsMissingActual; i++) {
+      //Select a random index that has not already been blanked
+      let randomIndex;
+      do {
+        randomIndex = Math.floor(Math.random() * result.length)
+      } while (result[randomIndex].isBlanked)
+      result[randomIndex].isBlanked = true;
+    }
+    console.log('Formatted and blanked verse:', result)
+
+    return result
+  }
+
+  /**
+   * Checks if all VerseBlank components have the correct answer entered.
+   * Uses the isCorrect method of each VerseBlank component to determine correctness.
+   */
+  function handleVerseSubmitted(e) {
+    e.preventDefault()
+
+    let allCorrect = true;
+    for (const ref of blankRefs.current.filter(ref => ref)) {
+      if (typeof ref.isCorrect === 'function') {
+        allCorrect &= ref.isCorrect()
+      }
+    }
+
+    console.log('All VerseBlanks correct:', allCorrect)
+  }
+
+  function handleNumWordsMissingChange(e) {
+    setNumWordsMissing(Number(e.target.value))
+  }
+
   return <>
-    <form id="verse-controls" onSubmit={handleSubmit}>
+    <form id="verse-controls" onSubmit={handleVerseSelected}>
       <label htmlFor="translation">Translation</label>
       <select id="translation" value={currTranslation} onChange={handleTranslationChange}>
         <option value="">Select translation</option>
@@ -130,11 +209,39 @@ function App() {
         ))}
       </select>
 
-      <button type="submit" disabled={!currTranslation || !currBook || !currChapter || !currVerse} onClick={handleSubmit}>Submit</button>
+      <label htmlFor="numWordsMissing">Number of Words Missing</label>
+      <input type="number" id="numWordsMissing" value={numWordsMissing} onChange={handleNumWordsMissingChange} min="0" />
+
+      <button type="submit" disabled={!currTranslation || !currBook || !currChapter || !currVerse}>Submit</button>
     </form>
-    <p>{verseResult}</p>
+    <form id="verse-entry" onSubmit={handleVerseSubmitted}>
+      <p>{verseRaw}</p>
+      <hr style={{ margin: '10px 0' }} />
+      {
+        verseFormatted.map((element, index) => {
+          if (element.isBlanked) {
+            return (
+              <>
+                <VerseBlank key={index} answer={element.verse}
+                  ref={node => {
+                    blankRefs.current[index] = node
+                  }}
+                />
+                {" "}
+              </>
+            )
+          }
+
+          return (
+            <span key={index}>
+              {element.verse + " "}
+            </span>
+          )
+        })
+      }
+      <button type="submit">Submit Verse</button>
+    </form>
   </>
 }
 
 export default App
-
