@@ -1,0 +1,14 @@
+#verse-controls {
+    float: left;
+
+    display: flex;
+    align-items: flex-start;
+    flex-direction: column;
+
+    padding: 10px;
+
+    select {
+        margin-bottom: 10px;
+        width: 200px;
+    }
+}

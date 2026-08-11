@@ -12,6 +12,8 @@ const VerseBlank = forwardRef(({answer}, ref) => {
   const [status, setStatus] = useState(STATUS.UNANSWERED);
   const trimmedAnswer = (answer || '').replaceAll(/[.,!?;:“”"]+/g, '').trim();
 
+  useImperativeHandle(ref, () => ({ isCorrect }));
+
   /**
    * Checks if the entered word matches the correct answer.
    * If it does, disables the input and colors it green; otherwise, colors it red.
@@ -24,7 +26,6 @@ const VerseBlank = forwardRef(({answer}, ref) => {
     console.log(`Entered word: ${value}, Correct answer: ${trimmedAnswer}, Is correct: ${result}`);
     return result;
   }
-  useImperativeHandle(ref, () => ({ isCorrect }));
 
   let denewlinedAnswer = (answer || '').replace(/\s+/g, ' ').trim();
   let punctuationAtStart = (denewlinedAnswer || '').match(/^[“”"]+/);

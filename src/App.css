@@ -1,13 +1,3 @@
-#verse-controls {
-  display: flex;
-  align-items: flex-start;
-  flex-direction: column;
-  float: left;
-
-  padding: 10px;
-
-  select {
-    margin-bottom: 10px;
-    width: 200px;
-  }
+hr {
+  margin: 10px 0;
 }
