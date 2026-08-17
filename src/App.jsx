@@ -98,7 +98,7 @@ function App() {
           )
         })
       }
-      <button type="submit">Submit Verse</button>
+      <button id="submit-verses" type="submit" hidden={!verseFormatted.some(el => el.isBlanked)}>Check</button>
     </form>
   </>
 }

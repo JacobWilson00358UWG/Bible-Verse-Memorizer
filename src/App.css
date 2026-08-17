@@ -1,3 +1,28 @@
+:root {
+  color-scheme: light dark;
+  --fg-color-primary: #007bff;
+  --bg-color-primary: light-dark(#FFF, #222);
+  --bg-color-secondary: light-dark(#CCC, #333);
+}
+
+body {
+  background-color: var(--bg-color-primary);
+  
+}
+
 hr {
-  margin: 10px 0;
+  margin: 10px 0px;
+}
+
+button {
+  display: block;
+  border: 3px solid var(--fg-color-primary);
+  border-radius: 10px;
+  background-color: var(--bg-color-secondary);
+
+}
+
+#submit-verses {
+  margin: 5px;
+  padding: 1em;
 }

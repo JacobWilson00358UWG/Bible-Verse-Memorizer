@@ -1,22 +1,28 @@
-.correct {
-    background-color: lightgreen;
-    border-color: green;
-}
+.verse-blank {
+    .correct {
+        background-color: light-dark(lightgreen, darkgreen);
+        border-color: green;
+    }
 
-.incorrect {
-    background-color: lightcoral;
-    border-color: red;
-}
+    .incorrect {
+        background-color: light-dark(lightcoral, darkred);
+        border-color: red;
+    }
 
-.unanswered {
-    background-color: lightgray;
-    border-color: #888;
-}
+    .unanswered {
+        background-color: var(--bg-color-secondary);
+        border-color: var(--fg-color-primary);
+    }
+    .unanswered:focus {
+        border-color: var(--fg-color-primary);
+        outline: none;
+    }
 
-input {
-    display: inline-block;
-    width: 125px;
+    input {
+        display: inline-block;
+        width: 125px;
 
-    border-radius: 5px;
-    border: 1px solid #888;
+        border-radius: 5px;
+        border: 3px solid;
+    }
 }

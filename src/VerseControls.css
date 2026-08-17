@@ -1,14 +1,29 @@
 #verse-controls {
     float: left;
+    position: sticky;
+    top: 0;
 
     display: flex;
     align-items: flex-start;
     flex-direction: column;
 
-    padding: 10px;
+    height: 100vh;
 
-    select {
+    padding: 10px;
+    margin: 0px 10px;
+
+    background-color: var(--bg-color-secondary);
+    border: 3px solid var(--fg-color-primary);
+    border-top: none;
+    border-bottom: none;
+    box-shadow: 0 0px 10px var(--fg-color-primary);
+
+    select, input {
         margin-bottom: 10px;
         width: 200px;
+    }
+
+    button {
+        padding: 5px;
     }
 }
