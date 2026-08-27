@@ -5,9 +5,9 @@ import './VerseControls.css'
  * Component for selecting a Bible verse and specifying the number of words to be replaced by blanks.
  * Fetches available translations, books, chapters, and verses from the Bible API.
  * Allows the user to select a translation, book, chapter, and verse, and specify how many words should be blanked.
- * Calls the onVerseSelected callback with the raw and formatted versions of the selected verse to propogate the data to the parent component.
+ * Calls the onVersesSelected callback with the raw and formatted versions of the selected verses to propogate the data to the parent component.
  */
-function VerseControls({onVerseSelected}) {
+function VerseControls({onVersesSelected}) {
     const [translations, setTranslations] = useState([])
     const [books, setBooks] = useState([])
     const [chapters, setChapters] = useState([])
@@ -15,10 +15,11 @@ function VerseControls({onVerseSelected}) {
     const [currTranslation, setCurrTranslation] = useState('')
     const [currBook, setCurrBook] = useState('')
     const [currChapter, setCurrChapter] = useState(0)
-    const [currVerse, setCurrVerse] = useState(0)
+    const [currVerseStart, setCurrVerseStart] = useState(0)
+    const [currVerseEnd, setCurrVerseEnd] = useState(0)
 
     const [numWordsMissing, setNumWordsMissing] = useState(0)
-    const [verseRaw, setVerseRaw] = useState('')
+    const [versesRaw, setVersesRaw] = useState('')
 
     useEffect(() => {
         fetch('https://bible-api.com/data')
@@ -39,14 +40,18 @@ function VerseControls({onVerseSelected}) {
         setCurrTranslation(value)
         setCurrBook('')
         setCurrChapter(0)
-        setCurrVerse(0)
+        setCurrVerseStart(0)
+        setCurrVerseEnd(0)
         setChapters([])
         setVerses([])
 
         fetch(`https://bible-api.com/data/${value}`)
             .then(response => response.json())
             .then(data => setBooks(data.books || []) )
-            .catch(error => console.error('Failed to load books:', error))
+            .catch(error => {
+                alert('Failed to load books, please try again.', error)
+                console.error('Failed to load books:', error)
+            })
     }
 
     /**
@@ -57,13 +62,17 @@ function VerseControls({onVerseSelected}) {
         const value = e.target.value
         setCurrBook(value)
         setCurrChapter(0)
-        setCurrVerse(0)
+        setCurrVerseStart(0)
+        setCurrVerseEnd(0)
         setVerses([])
 
         fetch(`https://bible-api.com/data/${currTranslation}/${value}`)
             .then(response => response.json())
             .then(data => setChapters(data.chapters || []) )
-            .catch(error => console.error('Failed to load chapters:', error))
+            .catch(error => {
+                alert('Failed to load chapters, please try again.', error)
+                console.error('Failed to load chapters:', error)
+            })
     }
 
     /**
@@ -73,36 +82,57 @@ function VerseControls({onVerseSelected}) {
     function handleChapterChange(e) {
         const value = e.target.value
         setCurrChapter(value)
-        setCurrVerse(0)
+        setCurrVerseStart(0)
+        setCurrVerseEnd(0)
 
         fetch(`https://bible-api.com/data/${currTranslation}/${currBook}/${value}`)
         .then(response => response.json())
         .then(data => setVerses(data.verses || []) )
-        .catch(error => console.error('Failed to load verses:', error))
+        .catch(error => {
+            alert('Failed to load verses, please try again.', error)
+            console.error('Failed to load verses:', error)
+        })
     }
 
     /**
-     * Handles the change of the verse selection.
+     * Handles the change of the starting verse selection.
      */
-    function handleVerseChange(e) {
-        setCurrVerse(Number(e.target.value))
+    function handleVerseStartChange(e) {
+        setCurrVerseStart(Number(e.target.value))
+        if (currVerseEnd && (Number(e.target.value) > currVerseEnd)) {
+            setCurrVerseEnd(Number(e.target.value))
+        }
     }
 
     /**
-     * Fetches the selected verse and generates a version of the verse with a specified number of words replaced by blanks.
+     * Handles the change of the ending verse selection.
      */
-    function handleVerseSelected(e) {
+    function handleVerseEndChange(e) {
+        setCurrVerseEnd(Number(e.target.value))
+    }
+
+    /**
+     * Fetches the selected verses and generates a version of the verses with a specified number of words replaced by blanks.
+     */
+    function handleVersesSelected(e) {
         e.preventDefault()
-        if (currTranslation && currBook && currChapter && currVerse) {
+        if (currTranslation && currBook && currChapter && currVerseStart) {
             fetch(`https://bible-api.com/data/${currTranslation}/${currBook}/${currChapter}`)
                 .then(response => response.json())
                 .then(data => {
-                    //"currVerse - 1" because the list is 0-indexed but verse selection is 1-indexed
-                    let verseText = data.verses[currVerse - 1]?.text || 'No verse found.'
-                    setVerseRaw(verseText)
-                    onVerseSelected?.(verseText, numWordsMissing)
+                    //"currVerseStart - 1" because the list is 0-indexed but verse selection is 1-indexed
+                    let versesText = ''
+                    for (let i = currVerseStart - 1; i < (currVerseEnd || currVerseStart); i++) {
+                        versesText += (data.verses[i].text || `No verse found: [${i}]`) + ' '
+                    }
+                    
+                    setVersesRaw(versesText)
+                    onVersesSelected?.(versesText, numWordsMissing)
                 })
-                .catch(error => console.error('Failed to load verse:', error))
+                .catch(error => {
+                    alert('Failed to load verses, please try again.', error)
+                    console.error('Failed to load verses:', error)
+                })
         } else {
             alert('Please select a translation, book, chapter, and verse before submitting.')
         }
@@ -118,16 +148,16 @@ function VerseControls({onVerseSelected}) {
 //  </Event Handlers>
     
     /**
-     * Exposes the unformatted verse for the parent component via a ref.
+     * Exposes the unformatted verses for the parent component via a ref.
      * 
-     * @returns the unformatted verse
+     * @returns the unformatted verses
      */
-    function getVerseRaw() {
-        return verseRaw
+    function getVersesRaw() {
+        return versesRaw
     }
 
     return (
-        <form id="verse-controls" onSubmit={handleVerseSelected}>
+        <form id="verse-controls" onSubmit={handleVersesSelected}>
             <label htmlFor="translation">Translation</label>
             <select id="translation" value={currTranslation} onChange={handleTranslationChange}>
                 <option value="">Select translation</option>
@@ -152,18 +182,26 @@ function VerseControls({onVerseSelected}) {
                 ))}
             </select>
 
-            <label htmlFor="verse">Verse</label>
-            <select id="verse" value={currVerse} onChange={handleVerseChange} disabled={!verses.length}>
+            <label htmlFor="verse-start">Verse Start</label>
+            <select id="verse-start" value={currVerseStart} onChange={handleVerseStartChange} disabled={!verses.length}>
                 <option value="">Select verse</option>
                 {verses.map(item => (
                     <option value={Number(item.verse)} key={item.verse}>{item.verse}</option>
                 ))}
             </select>
 
+            <label htmlFor="verse-end">Verse End</label>
+            <select id="verse-end" value={currVerseEnd} onChange={handleVerseEndChange} disabled={!verses.length}>
+                <option value="">Select verse</option>
+                {verses.map(item => (
+                    (item.verse >= currVerseStart) && <option value={Number(item.verse)} key={item.verse}>{item.verse}</option>
+                ))}
+            </select>
+
             <label htmlFor="numWordsMissing">Number of Words Missing</label>
             <input type="number" id="numWordsMissing" value={numWordsMissing} onChange={handleNumWordsMissingChange} min="0" />
 
-            <button type="submit" disabled={!currTranslation || !currBook || !currChapter || !currVerse}>Submit</button>
+            <button type="submit" disabled={!currTranslation || !currBook || !currChapter || !currVerseStart}>Submit</button>
         </form>
     );
 }

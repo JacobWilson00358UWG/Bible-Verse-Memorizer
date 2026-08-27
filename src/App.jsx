@@ -34,7 +34,9 @@ function App() {
       }
     }
 
-    console.log('All VerseBlanks correct:', allCorrect)
+    if (allCorrect) {
+      alert('All answers are correct!')
+    }
   }
 
   /**
@@ -72,7 +74,7 @@ function App() {
   }
 
   return <>
-    <VerseControls onVerseSelected={handleVerseSelected} />
+    <VerseControls onVersesSelected={handleVerseSelected} />
     <form id="verse-entry" onSubmit={handleVerseSubmitted}>
       <p>{verseRaw}</p>
       <hr/>
@@ -98,7 +100,9 @@ function App() {
           )
         })
       }
-      <button id="submit-verses" type="submit" hidden={!verseFormatted.some(el => el.isBlanked)}>Check</button>
+      {verseFormatted.some(el => el.isBlanked) && (
+        <button id="submit-verses" type="submit">Check</button>
+      )}
     </form>
   </>
 }
