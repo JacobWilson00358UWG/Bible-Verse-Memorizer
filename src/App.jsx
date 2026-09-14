@@ -6,7 +6,6 @@ import VerseBlank from './VerseBlank'
 function App() {
   const blankRefs = useRef([])
 
-  const [verseRaw, setVerseRaw] = useState('')
   const [verseFormatted, setVerseFormatted] = useState([])
 
   /**
@@ -16,7 +15,6 @@ function App() {
    * @param {*} formatted 
    */
   function handleVerseSelected(raw, numWordsMissing) {
-    setVerseRaw(raw)
     setVerseFormatted(formatAsBlankedVerse(raw, numWordsMissing))
   }
 
@@ -76,8 +74,6 @@ function App() {
   return <>
     <VerseControls onVersesSelected={handleVerseSelected} />
     <form id="verse-entry" onSubmit={handleVerseSubmitted}>
-      <p>{verseRaw}</p>
-      <hr/>
       {
         verseFormatted.map((element, index) => {
           if (element.isBlanked) {
